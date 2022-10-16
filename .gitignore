@@ -1,0 +1,6 @@
+# ingore dev dirs
+__pycache__/
+/.vscode/
+
+# do not include logs
+/logs/
