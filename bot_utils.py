@@ -2,6 +2,7 @@ import miraicle
 import time
 import os
 import csv
+import aiofiles
 
 async def chatlog_transcript(msg: miraicle.Message):
     
@@ -32,4 +33,3 @@ async def chatlog_transcript(msg: miraicle.Message):
         with open(f"./logs/chat_log/{msg.sender}.chatlog.csv", "a+", encoding = "utf-8") as f:
             writer = csv.writer(f)
             writer.writerow([time.time(), msg.sender, msg.sender_name, msg.plain])
-        
