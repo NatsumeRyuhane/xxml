@@ -5,10 +5,11 @@ import random
 import json
 import time
 import os
+import requests
 
 import miraicle
 
-from connect import reply_plain_text
+from connect import reply_plain_text, reply_image
 import dice
 
 class commandParser(argparse.ArgumentParser):
@@ -69,25 +70,45 @@ class commandManager():
         if self.is_command_alias(command_signature):
             return self.command_dict[self.command_alias_dict[command_signature]]
         else: return None
+        
+    def get_command_function(self, command: str):
+        return self.get_command_struct(command)[0]
     
     async def run_command(self, msg: miraicle.Message):
+        
+        if isinstance(msg, miraicle.GroupMessage): 
+            access_check_type = "GROUP"
+            access_check_id = msg.group
+        else: 
+            access_check_type = "USER"
+            access_check_id = msg.sender
+        
         try:
-            command = command_manager.parse_command_from_msg(msg)
+            command = self.parse_command_from_msg(msg)
             if command:
                 if self.is_command_alias(command):
                     logging.info(f"Resolved command alias [{command}] to command [{self.command_alias_dict[command]}] and running")
                 else:
                     logging.info(f"Running command [{command}]")
-                return await command_manager.get_command_struct(command)[0](msg)
-        except Exception as e:
-                logging.warning(f"Error running command {command}. Traceback: {e}")
+                    
+                command_struct = self.get_command_struct(command)
+                command_obj = command_struct[1]
+                if command_obj.access_check(id = access_check_id, mode = access_check_type):
+                    command_function = self.get_command_function(command)
+                    return await command_function(msg)
+                else:
+                    logging.info("Command execution aborted: access rule violation")
+        except Exception:
+                logging.warning(f"Error running command {command}. Traceback:", exc_info=True)
         
     
 command_manager = commandManager()
 
 class command():
     
-    def __init__(self, command_name: str, aliases: list = None, help_short = "") -> None:
+    def __init__(self, command_name: str, aliases: list = None, help_short = "", access_mode = "BLACK_LIST", 
+                 default_group_blacklist = [], default_group_whitelist = [],
+                 default_user_blacklist = [], default_user_whitelist = []) -> None:
         global command_manager
         
         self.command_manager = command_manager
@@ -95,6 +116,23 @@ class command():
         self.aliases = aliases
         self.decorated = False
         self.help = help_short
+        if access_mode in ["BLACK_LIST", "WHITE_LIST"]:
+            self.access_mode = access_mode
+        else:
+            logging.warning(f"Unrecognized value {access_mode} of parameter access_mode for command {self.name}. Defaulting to BLACK_LIST mode.")
+            self.access_mode = "BLACK_LIST"
+
+        self.group_white_list = default_group_whitelist
+        self.user_white_list = default_user_whitelist
+        
+        self.group_black_list = default_group_blacklist
+        self.user_black_list = default_user_blacklist
+        
+        if self.access_mode == "BLACK_LIST" and (self.user_white_list or self.group_white_list):
+            logging.warning(f"Command {self.name} access mode is BLACK_LIST but whitelists are given.")
+            
+        if self.access_mode == "WHITE_LIST" and (self.user_black_list or self.group_black_list):
+            logging.warning(f"Command {self.name} access mode is WHITE_LIST but blacklists are given.")
         
     def __call__(self, command_function):
         
@@ -107,6 +145,31 @@ class command():
             self.decorated = True
         else:
             raise Exception("Attempt to re-decorate a used command object found!")
+        
+    def access_check(self, id = None,  mode = "GROUP"):
+        if self.access_mode == "BLACK_LIST":
+            if mode == "GROUP":
+                if id in self.group_black_list: return False
+                else: return True
+            elif mode == "USER":
+                if id in self.user_black_list: return False
+                else: return True
+        elif self.access_mode == "WHITE_LIST":
+            if mode == "GROUP":
+                if id in self.group_white_list: return True
+                else: return False
+            elif mode == "USER":
+                if id in self.user_white_list: return True
+                else: return False
+            
+        
+    def access_mode_toggle(self):
+        if self.access_mode == "BLACK_LIST":
+            self.access_mode = "WHITE_LIST"
+            logging.info(f"Command {self.name} access mode set to WHITE_LIST")
+        else:
+            self.access_mode = "BLACK_LIST"
+            logging.info(f"Command {self.name} access mode set to BLACK_LIST")
         
 
     
@@ -127,8 +190,6 @@ async def help(msg: miraicle.GroupMessage):
         help_string = "可用指令：\n\n"
         for c in command_manager.command_dict.keys():
             help_string += f"[ {command_manager.command_prefix}{c} ]\n{command_manager.command_dict[c][1].help}\n\n"
-            
-        # help_string += f"注：由于miraicle框架原因私发消息功能暂时不可用。私聊的指令和消息会被正常获取，但是无法通过私聊通道进行消息发送。"
             
         await reply_plain_text(msg, f"{help_string}")    
     
@@ -181,7 +242,7 @@ async def roll(msg: miraicle.GroupMessage):
     parser = commandParser(add_help = False)
     parser.add_argument("diceExpr", nargs = "?", default = "d100")
     parser.add_argument("-h", "--help", action = "store_true")
-    parser.add_argument("-c", "--check", type = int)
+    parser.add_argument("-v", "--value", type = int)
     parser.add_argument("-n", "--name", type = str)
 
     
@@ -196,7 +257,7 @@ async def roll(msg: miraicle.GroupMessage):
         await reply_plain_text(msg, f"\n{dice.__doc__}")
         return 0
     
-    elif args.check:
+    elif args.value:
         roll_result = dice.parse_and_eval_dice(args.diceExpr)
         if not args.name:
             messgage_out = "某个...你没跟我讲到底是啥玩意的检定结果：\n"
@@ -207,10 +268,10 @@ async def roll(msg: miraicle.GroupMessage):
         
         if roll_result[1] == 1: messgage_out += "检定结论：大成功！！！"
         elif roll_result[1] in range(96, 101): messgage_out += "检定结论：大失败！！"
-        elif roll_result[1] in range(2, int(args.check / 5) + 1): messgage_out += "检定结论：极难成功！！"
-        elif roll_result[1] in range(int(args.check / 5) + 1, int(args.check / 2) + 1): messgage_out += "检定结论：困难成功！"
-        elif roll_result[1] in range(int(args.check / 2) + 1, int(args.check)): messgage_out += "检定结论：通过"
-        elif roll_result[1] in range(int(args.check), 96): messgage_out += "检定结论：失败！"
+        elif roll_result[1] in range(2, int(args.value / 5) + 1): messgage_out += "检定结论：极难成功！！"
+        elif roll_result[1] in range(int(args.value / 5) + 1, int(args.value / 2) + 1): messgage_out += "检定结论：困难成功！"
+        elif roll_result[1] in range(int(args.value / 2) + 1, int(args.value)): messgage_out += "检定结论：通过"
+        elif roll_result[1] in range(int(args.value), 96): messgage_out += "检定结论：失败！"
 
         else: messgage_out += "检定结论：你好像卡出bug来了"
         
@@ -331,7 +392,7 @@ async def dsmn(msg: miraicle.GroupMessage, record_dict = {}):
     if result in range(1, prob["special"]):
         record_dict[msg.sender] = ["special", 1]
         card = random.choice(list(cards_random.keys()))
-        status = f"呃，这是...\n...[ {card} ]？\n啥玩意啊这...\n\n"
+        status = f"呃，这是...\n...[ {card} ]？\n\n"
         comment = cards_random[card]
     elif result in range(prob["special"], prob["special"] + prob["crown"]):
         record_dict[msg.sender] = ["crown", 1]
@@ -387,3 +448,41 @@ async def macro(msg: miraicle.GroupMessage):
     except SystemExit:
         await reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
         return -1
+
+@command(command_name = "吃啥", help_short = "")
+async def dsmn(msg: miraicle.GroupMessage):
+    images_path = "./static/images/food"
+    image_selected = random.choice(os.listdir(images_path))
+        
+    await reply_image(msg, message = "我去问了阿虎，他说可以吃这个！", image_path = f"{images_path}/{image_selected}", add_mention = True)
+
+@command(command_name = "安利", help_short = "给其他人卖安利", access_mode = "WHITE_LIST", default_group_whitelist = [484597471])
+async def macro(msg: miraicle.GroupMessage):
+
+    parser = commandParser(add_help = False)
+    parser.add_argument("-a", "--add", action = "store_true")
+    parser.add_argument("-l", "--link", type = int)
+    parser.add_argument("-d", "--delete", type = int)
+
+    
+    try:
+        args = shlex.split(msg.plain)
+        args = parser.parse_args(args[1:])
+    except SystemExit:
+        await reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
+        return -1
+
+@command(command_name = "稿子", help_short = "")
+async def macro(msg: miraicle.GroupMessage):
+
+    parser = commandParser(add_help = False)
+    parser.add_argument("-a", "--add", action = "store_true")
+    parser.add_argument("-l", "--link", type = int)
+    parser.add_argument("-d", "--delete", type = int)
+
+    
+    try:
+        args = shlex.split(msg.plain)
+        args = parser.parse_args(args[1:])
+    except SystemExit:
+        await reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")

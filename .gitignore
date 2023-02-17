@@ -5,5 +5,8 @@ __pycache__/
 # do not include logs
 /logs/
 
+# do not include data
+/data/
+
 # do not include credentials
 /config/bot.cfg
