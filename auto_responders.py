@@ -4,7 +4,7 @@ import random
 
 from connect import bot
 
-async def auto_echo(msg: miraicle.GroupMessage, group_msg_cache = {}):
+def auto_echo(msg: miraicle.GroupMessage, group_msg_cache = {}):
     if not msg.group in group_msg_cache.keys():
         if msg.plain != "":
             group_msg_cache[msg.group] = [msg.plain, 1]
@@ -16,9 +16,9 @@ async def auto_echo(msg: miraicle.GroupMessage, group_msg_cache = {}):
             
         if group_msg_cache[msg.group][1] == 3:
             logging.info(f"Auto-echo triggered in group {msg.group}")
-            await bot.send_group_msg(group = msg.group, msg = miraicle.Plain(group_msg_cache[msg.group][0]))
+            bot.send_group_msg(group = msg.group, msg = miraicle.Plain(group_msg_cache[msg.group][0]))
 
-async def anti_milk_trigger(msg: miraicle.GroupMessage, group_msg_cache = {}):
+def anti_milk_trigger(msg: miraicle.GroupMessage, group_msg_cache = {}):
     if msg.sender == 177249529:
         rspnd_dict = {
             "generic" : [
@@ -58,9 +58,9 @@ async def anti_milk_trigger(msg: miraicle.GroupMessage, group_msg_cache = {}):
         if random.randint(1, 100) <= 75:
             for key in rspnd_dict.keys():
                 if key in msg.plain:
-                    await bot.send_group_msg(group = msg.group, msg = random.choice(rspnd_dict[key]))
+                    bot.send_group_msg(group = msg.group, msg = random.choice(rspnd_dict[key]))
                     return
 
-            await bot.send_group_msg(group = msg.group, msg = random.choice(rspnd_dict["generic"]))
+            bot.send_group_msg(group = msg.group, msg = random.choice(rspnd_dict["generic"]))
         else:
             return

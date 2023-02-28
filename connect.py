@@ -2,11 +2,11 @@ import miraicle
 import logging
 
 # Login
-bot = miraicle.AsyncMirai(qq = 1411434717, verify_key = 'mirai.auth(0)', port = 8088)
+bot = miraicle.Mirai(qq = 1411434717, verify_key = 'mirai.auth(0)', port = 8088)
 logging.debug("Bot instance created successfully")
 
 
-async def reply_plain_text(context: miraicle.Message, message: str, add_mention: bool = False, use_quote = True):
+def reply_plain_text(context: miraicle.Message, message: str, add_mention: bool = False, use_quote = True):
     message_out = []
     message_out.append(miraicle.Plain(message))
     
@@ -18,22 +18,22 @@ async def reply_plain_text(context: miraicle.Message, message: str, add_mention:
         if add_mention:
             message_out.insert(0, miraicle.At(qq = context.sender))
 
-        await bot.send_group_msg(group = context.group, 
+        bot.send_group_msg(group = context.group, 
                                  msg = message_out,
                                  quote = quote_msg_id)
         
     elif isinstance(context, miraicle.TempMessage):
-        await bot.send_temp_msg(group = context.group,
+        bot.send_temp_msg(group = context.group,
                                 qq = context.sender,
                                 msg = message_out)
 
     elif isinstance(context, miraicle.FriendMessage):
-        await bot.send_friend_msg(qq = context.sender,
+        bot.send_friend_msg(qq = context.sender,
                                   msg = message_out)
 
     else: raise TypeError("Unrecognized message context type!")
 
-async def reply_image(context: miraicle.Message, message: str, image_path: [], add_mention: bool = False, use_quote = True):
+def reply_image(context: miraicle.Message, message: str, image_path: [], add_mention: bool = False, use_quote = True):
     message_out = []
 
     if not isinstance(image_path, list):
@@ -52,17 +52,17 @@ async def reply_image(context: miraicle.Message, message: str, image_path: [], a
         if add_mention:
             message_out.insert(0, miraicle.At(qq = context.sender))
 
-        await bot.send_group_msg(group = context.group, 
+        bot.send_group_msg(group = context.group, 
                                  msg = message_out,
                                  quote = quote_msg_id)
         
     elif isinstance(context, miraicle.TempMessage):
-        await bot.send_temp_msg(group = context.group,
+        bot.send_temp_msg(group = context.group,
                                 qq = context.sender,
                                 msg = message_out)
 
     elif isinstance(context, miraicle.FriendMessage):
-        await bot.send_friend_msg(qq = context.sender,
+        bot.send_friend_msg(qq = context.sender,
                                   msg = message_out)
 
     else: raise TypeError("Unrecognized message context type!")

@@ -3,8 +3,11 @@ import time
 import os
 import csv
 import aiofiles
+import threading
 
-async def chatlog_transcript(msg: miraicle.Message):
+chatlog_lock = threading.Lock()
+
+def chatlog_transcript(msg: miraicle.Message):
     
     if not os.path.exists(f"./data/chat_log/"):
             os.mkdir(f"./data/chat_log/")

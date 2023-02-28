@@ -74,7 +74,7 @@ class commandManager():
     def get_command_function(self, command: str):
         return self.get_command_struct(command)[0]
     
-    async def run_command(self, msg: miraicle.Message):
+    def run_command(self, msg: miraicle.Message):
         
         if isinstance(msg, miraicle.GroupMessage): 
             access_check_type = "GROUP"
@@ -95,7 +95,7 @@ class commandManager():
                 command_obj = command_struct[1]
                 if command_obj.access_check(id = access_check_id, mode = access_check_type):
                     command_function = self.get_command_function(command)
-                    return await command_function(msg)
+                    return command_function(msg)
                 else:
                     logging.info("Command execution aborted: access rule violation")
         except Exception:
@@ -136,8 +136,8 @@ class command():
         
     def __call__(self, command_function):
         
-        async def wrapper(*args, **kwargs):
-            return await command_function(*args, **kwargs)
+        def wrapper(*args, **kwargs):
+            return command_function(*args, **kwargs)
 
         if not self.decorated:
             self.command_manager.register_command(self, wrapper)
@@ -174,7 +174,7 @@ class command():
 
     
 @command(command_name = "help", help_short = "显示指令列表")
-async def help(msg: miraicle.GroupMessage):
+def help(msg: miraicle.GroupMessage):
     parser = commandParser(add_help = False)
     parser.add_argument("targetCommand", nargs = "?", default = "help")
 
@@ -183,43 +183,43 @@ async def help(msg: miraicle.GroupMessage):
         args = shlex.split(msg.plain)
         args = parser.parse_args(args[1:])
     except SystemExit:
-        await reply_plain_text(msg, "指定查询的命令名有点问题...可能是你手癌了？还是你有参数没输完整？")
+        reply_plain_text(msg, "指定查询的命令名有点问题...可能是你手癌了？还是你有参数没输完整？")
         return -1
 
-    async def get_help():
+    def get_help():
         help_string = "可用指令：\n\n"
         for c in command_manager.command_dict.keys():
             help_string += f"[ {command_manager.command_prefix}{c} ]\n{command_manager.command_dict[c][1].help}\n\n"
             
-        await reply_plain_text(msg, f"{help_string}")    
+        reply_plain_text(msg, f"{help_string}")    
     
     if args.targetCommand:
         if args.targetCommand == "help":
-            await get_help()
+            get_help()
 
         elif command_manager.is_registered_command(args.targetCommand):
             help_string = command_manager.get_command_struct(args.targetCommand)[0].__doc__
             command = str(args.targetCommand).replace(command_manager.command_prefix, '')
             
             if help_string is None:
-                await reply_plain_text(msg, f"{command_manager.command_prefix}{command}\n\n 该指令还没有详细文档。因为小毛龙是懒狗。")
+                reply_plain_text(msg, f"{command_manager.command_prefix}{command}\n\n 该指令还没有详细文档。因为小毛龙是懒狗。")
             else:
-                await reply_plain_text(msg, f"{command_manager.command_prefix}{command}\n\n {help_string}")
+                reply_plain_text(msg, f"{command_manager.command_prefix}{command}\n\n {help_string}")
             return 0
         elif command_manager.is_command_alias(args.targetCommand):
             help_string = command_manager.get_command_struct(args.targetCommand)[0].__doc__
             command = str(args.targetCommand).replace(command_manager.command_prefix, '')
             
             if help_string is None:
-                await reply_plain_text(msg, f"[{command_manager.command_prefix}{command}]是[{command_manager.command_prefix}{command_manager.command_alias_dict[args.targetCommand]}]的别称。\n\n 该指令还没有详细文档。因为小毛龙是懒狗。")
+                reply_plain_text(msg, f"[{command_manager.command_prefix}{command}]是[{command_manager.command_prefix}{command_manager.command_alias_dict[args.targetCommand]}]的别称。\n\n 该指令还没有详细文档。因为小毛龙是懒狗。")
             else:
-                await reply_plain_text(msg, f"[{command_manager.command_prefix}{command}]是[{command_manager.command_prefix}{command_manager.command_alias_dict[args.targetCommand]}]的别称。\n\n {command_manager.get_command_struct(args.targetCommand)[0].__doc__}")
+                reply_plain_text(msg, f"[{command_manager.command_prefix}{command}]是[{command_manager.command_prefix}{command_manager.command_alias_dict[args.targetCommand]}]的别称。\n\n {command_manager.get_command_struct(args.targetCommand)[0].__doc__}")
             return 0
     else:        
-        await get_help()
+        get_help()
     
 @command(command_name = "r", help_short = "骰子，不过听说也能当计算器", aliases = ["rd"])
-async def roll(msg: miraicle.GroupMessage):
+def roll(msg: miraicle.GroupMessage):
     '''骰子/计算器工具
     d100: 100面骰
     2d100: 两个100面骰相加
@@ -250,11 +250,11 @@ async def roll(msg: miraicle.GroupMessage):
         args = shlex.split(msg.plain)
         args = parser.parse_args(args[1:])
     except SystemExit:
-        await reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
+        reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
         return -1
     
     if args.help:
-        await reply_plain_text(msg, f"\n{dice.__doc__}")
+        reply_plain_text(msg, f"\n{dice.__doc__}")
         return 0
     
     elif args.value:
@@ -275,25 +275,25 @@ async def roll(msg: miraicle.GroupMessage):
 
         else: messgage_out += "检定结论：你好像卡出bug来了"
         
-        await reply_plain_text(msg, messgage_out)
+        reply_plain_text(msg, messgage_out)
         return 0
         
     else:        
         roll_result = dice.parse_and_eval_dice(args.diceExpr)
-        await reply_plain_text(msg, ''.join(roll_result[0]))
+        reply_plain_text(msg, ''.join(roll_result[0]))
         return 0
 
 @command(command_name = "ping")
-async def echo(msg: miraicle.Message):
-    await reply_plain_text(msg, f"pong")
+def echo(msg: miraicle.Message):
+    reply_plain_text(msg, f"pong")
 
 @command(command_name = "echo", help_short = "人类的本质")
-async def echo(msg: miraicle.Message):
-    await reply_plain_text(msg, f"[[复读机启动]]\n{msg.plain}")
+def echo(msg: miraicle.Message):
+    reply_plain_text(msg, f"[[复读机启动]]\n{msg.plain}")
 
 
 # @command(command_name = "jrrp", help_short = "没做完。主要是不知道评论怎么写。")
-async def jrrp(msg: miraicle.Message):
+def jrrp(msg: miraicle.Message):
 
     try:
         with open('data/jrrp.json', 'w+', encoding='utf-8') as f:
@@ -331,7 +331,7 @@ async def jrrp(msg: miraicle.Message):
         reply_plain_text(msg, add_mention = True)
     
 @command(command_name = "导随模拟", aliases = ["导随"], help_short = "绝对不精确的导随模拟器")
-async def dsmn(msg: miraicle.GroupMessage):
+def dsmn(msg: miraicle.GroupMessage):
     with open('static/inst_sim.json', 'r', encoding='utf-8') as f:
         scene = json.load(f)
 
@@ -343,14 +343,14 @@ async def dsmn(msg: miraicle.GroupMessage):
     # if random.randint(1, 100) <= 10:
         # special = random.choice(scene['special_event']['job'][job])
         
-    await reply_plain_text(msg, f" 用{job}排了导随！\n进入了{level}。\n\n{result}\n\n珍爱生命，合理导随。不卑不亢，大慈大悲。", add_mention = True)
+    reply_plain_text(msg, f" 用{job}排了导随！\n进入了{level}。\n\n{result}\n\n珍爱生命，合理导随。不卑不亢，大慈大悲。", add_mention = True)
 
     if special:
-        await reply_plain_text(msg, f"哦，对了，顺便一提，{special}")
+        reply_plain_text(msg, f"哦，对了，顺便一提，{special}")
         
         
 @command(command_name = "抽卡", aliases = ["重抽"], help_short = "抽取一张奥秘卡。技能出卡会变为抽到的奥秘卡技能。")
-async def dsmn(msg: miraicle.GroupMessage, record_dict = {}):
+def dsmn(msg: miraicle.GroupMessage, record_dict = {}):
     cards_melee = ["太阳神之衡", "放浪神之箭", "战争神之枪"]
     cards_range = ["世界树之干", "河流神之瓶", "建筑神之塔"]
     cards_crown = ["王冠之领主", "王冠之贵妇"]
@@ -430,10 +430,10 @@ async def dsmn(msg: miraicle.GroupMessage, record_dict = {}):
         if record_dict[msg.sender][1] <= 7:
             comment = comment_same_type[record_dict[msg.sender][1]]
             
-    await reply_plain_text(msg, f" {status}{comment}", use_quote = True, add_mention = True)
+    reply_plain_text(msg, f" {status}{comment}", use_quote = True, add_mention = True)
     
 # @command(command_name = "宏", aliases = ["macro"], help_short = "")
-async def macro(msg: miraicle.GroupMessage):
+def macro(msg: miraicle.GroupMessage):
 
     parser = commandParser(add_help = False)
     parser.add_argument("-a", "--add", action = "store_true")
@@ -446,18 +446,18 @@ async def macro(msg: miraicle.GroupMessage):
         args = shlex.split(msg.plain)
         args = parser.parse_args(args[1:])
     except SystemExit:
-        await reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
+        reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
         return -1
 
 @command(command_name = "吃啥", help_short = "")
-async def dsmn(msg: miraicle.GroupMessage):
+def dsmn(msg: miraicle.GroupMessage):
     images_path = "./static/images/food"
     image_selected = random.choice(os.listdir(images_path))
         
-    await reply_image(msg, message = "我去问了阿虎，他说可以吃这个！", image_path = f"{images_path}/{image_selected}", add_mention = True)
+    reply_image(msg, message = "我去问了阿虎，他说可以吃这个！", image_path = f"{images_path}/{image_selected}", add_mention = True)
 
 @command(command_name = "安利", help_short = "给其他人卖安利", access_mode = "WHITE_LIST", default_group_whitelist = [484597471])
-async def macro(msg: miraicle.GroupMessage):
+def macro(msg: miraicle.GroupMessage):
 
     parser = commandParser(add_help = False)
     parser.add_argument("-a", "--add", action = "store_true")
@@ -469,11 +469,11 @@ async def macro(msg: miraicle.GroupMessage):
         args = shlex.split(msg.plain)
         args = parser.parse_args(args[1:])
     except SystemExit:
-        await reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
+        reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
         return -1
 
 @command(command_name = "稿子", help_short = "")
-async def macro(msg: miraicle.GroupMessage):
+def macro(msg: miraicle.GroupMessage):
 
     parser = commandParser(add_help = False)
     parser.add_argument("-a", "--add", action = "store_true")
@@ -485,4 +485,4 @@ async def macro(msg: miraicle.GroupMessage):
         args = shlex.split(msg.plain)
         args = parser.parse_args(args[1:])
     except SystemExit:
-        await reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
+        reply_plain_text(msg, "输入的参数有点问题...可能是你手癌了？还是你有参数没输完整？")
