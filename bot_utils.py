@@ -2,7 +2,6 @@ import miraicle
 import time
 import os
 import csv
-import aiofiles
 import threading
 
 chatlog_lock = threading.Lock()

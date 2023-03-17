@@ -6,6 +6,7 @@ import json
 import time
 import os
 import requests
+import datetime
 
 import miraicle
 
@@ -285,7 +286,11 @@ def roll(msg: miraicle.GroupMessage):
 
 @command(command_name = "ping")
 def echo(msg: miraicle.Message):
-    reply_plain_text(msg, f"pong")
+    if msg.sender == 1750157080:
+        current = datetime.datetime.now()
+        reply_plain_text(msg, f"Diagnostics\n------------\nMessage Received at {str(current.hour).zfill(2)}:{str(current.minute).zfill(2)}:{str(current.second).zfill(2)}.{str(current.microsecond)[0:3].zfill(3)}\nID = #{msg.id}@{msg.group}")
+    else:
+        reply_plain_text(msg, f"pong")
 
 @command(command_name = "echo", help_short = "人类的本质")
 def echo(msg: miraicle.Message):
@@ -357,7 +362,6 @@ def dsmn(msg: miraicle.GroupMessage, record_dict = {}):
     cards_random = {
         "黑夜学派" : "啊哦 这个东西不见了",
         "神圣路" : "啊哦 这个东西吉田祭天了",
-        "回天" : "请把这个东西还给受了伤的盘子们",
         "青眼白龙" : "收着吧，听说值很多钱呢。",
         "打击" : "费用1。造成6点伤害。建议赶紧找商店烧了。",
         "打击+" : "费用1。造成9点伤害。你还把这玩意升级了？",

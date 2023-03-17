@@ -24,7 +24,7 @@ import miraicle
 import command
 from connect import bot
 from bot_utils import *
-from auto_responders import auto_echo, anti_milk_trigger
+from auto_responders import auto_echo
 import scheduled_tasks
 
 config = {
@@ -44,7 +44,6 @@ def group_messages_recv(bot: miraicle.Mirai, msg: miraicle.GroupMessage):
                 command.command_manager.run_command(msg)
             else:
                 auto_echo(msg)
-                anti_milk_trigger(msg)
                 
         except Exception as e:
             logging.error(f"Uncaught Exception rasied.\n", exc_info = True)

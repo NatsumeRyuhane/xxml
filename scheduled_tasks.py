@@ -37,9 +37,27 @@ def water(bot: miraicle.Mirai):
         23: "晚上十一点",
     }
 
-    if hr in range(3, 7):
+    if hr in range(3, 8):
         pass
 
+    elif hr == 0:
+        msg_list = [
+            "新的一天到了。不过我觉得你其实应该去睡觉才对。",
+            f"现在已经是{current.day}号啦！所以你怎么还没睡？",
+            "十二点了！我知道你们肯定没睡但是，我至少得试试，所以，你们要不要考虑现在去...睡觉？"
+        ]
+
+        bot.send_group_msg(group = 484597471, 
+                            msg = random.choice(msg_list))
+    elif hr == 1:
+        msg_list = [
+            "（小小毛龙已经困了。）",
+            "（你看见小小毛龙闭上了眼睛，然后又强撑着睁开眼睛打了个哈欠。）",
+            "一点了诶...你怎么还不睡？"
+        ]
+
+        bot.send_group_msg(group = 484597471, 
+                            msg = random.choice(msg_list))
     elif hr == 2:
         msg_list = [
             "两点了，小小毛龙也要休息了。你为什么还没睡？",
@@ -52,7 +70,7 @@ def water(bot: miraicle.Mirai):
                             msg = random.choice(msg_list))
     elif hr == 8:
         msg_list = [
-            f"早上好！现在是{current.year}年{current.month}月{current.day}号的早上八点，天气你自己往窗外瞅吧，我不知道。"
+            f"早上好！现在是{current.year}年{current.month}月{current.day}号的早上八点，天气你自己往窗外瞅吧，我不知道。",
             "早！不过现在这个点真的有人么？虽然是早上八点但是你们真的有人在吗？哈喽？",
             "小毛龙叫我早上八点的时候来群里吱一声。不过说实话我没太睡醒，现在是八点么？"
         ]            
@@ -61,14 +79,21 @@ def water(bot: miraicle.Mirai):
                             msg = random.choice(msg_list))
     else:
         msg_list = [
-            f"{hr_to_chi_dict[hr]}了。起来稍微活动下怎么样？",
-            "又一个小时过去了。小小毛龙建议你少水会群，多喝点水。不如现在就去干个300ml。",
-            "你知道吗？大多数医学指南推荐你每天摄入2000ml以上的水，以及0ml的无糖百事可乐。已经一个小时了，喝点水吧。可乐可以给我喝。",
-            f"现在是{hr_to_chi_dict[hr]}整。我又来叫你们喝水了。回复TD也不能退订。",
-            "又到整点了。你知道我是来教你干啥的。不过其实除了干水之外你也可以考虑做点别的，像是起来走走，可以防止血栓冒出来干你。",
-            "乐观主义者说瓶子是半满的，悲观主义者说瓶子是半空的，而我只是想跟你讲又一个小时过去了，你能不能把这剩下半瓶水喝完？",
-            "（小小毛龙打了个呵欠，然后在你面前晃了晃一个空着的水杯。）"
+            [range(9, 24), f"{hr_to_chi_dict[hr]}了。起来稍微活动下怎么样？"],
+            [range(9, 21), "又一个小时过去了。小小毛龙建议你少水会群，多喝点水。不如现在就去干个300ml。"],
+            [range(9, 21), "你知道吗？大多数医学指南推荐你每天摄入2000ml以上的水，以及0ml的无糖可乐。已经一个小时了，喝点水吧。可乐可以给我喝。"],
+            [range(9, 21), f"现在是{hr_to_chi_dict[hr]}整。我又来叫你们喝水了。回复TD也不能退订。"],
+            [range(9, 24), "又到整点了。你知道我是来喊你做啥的。不过其实除了喝水之外你也可以考虑做点别的，像是起来走走，可以防止血栓冒出来干你。"],
+            [range(10, 21),"乐观主义者说瓶子是半满的，悲观主义者说瓶子是半空的，而我只是想跟你讲又一个小时过去了，你能不能把这剩下半瓶水喝完？"],
+            [range(11, 24), f"{hr_to_chi_dict[hr]}。虽然我只是叫你来喝水的，但是一信说你也可以提肛。为什么要提肛？你问他去，我不知道。"],
+            [range(9, 21), "（小小毛龙打了个呵欠，然后在你面前晃了晃一个空着的水杯。）"]
         ]            
 
+        msg = random.choice(msg_list)
+        while hr not in msg[0]:
+            msg = random.choice(msg_list)
+
+        message = msg[1]
+
         bot.send_group_msg(group = 484597471, 
-                            msg = random.choice(msg_list))
+                            msg = message)
