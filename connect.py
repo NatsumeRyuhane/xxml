@@ -2,7 +2,7 @@ import miraicle
 import logging
 
 # Login
-bot = miraicle.Mirai(qq = 1411434717, verify_key = 'mirai.auth(0)', port = 8088)
+bot = miraicle.Mirai(qq = 1750157080, verify_key = 'mirai.auth(0)', port = 8088)
 logging.debug("Bot instance created successfully")
 
 

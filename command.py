@@ -221,23 +221,7 @@ def help(msg: miraicle.GroupMessage):
     
 @command(command_name = "r", help_short = "骰子，不过听说也能当计算器", aliases = ["rd"])
 def roll(msg: miraicle.GroupMessage):
-    '''骰子/计算器工具
-    d100: 100面骰
-    2d100: 两个100面骰相加
-    2d100s: 两个100面骰里较小的那个
-    3d100s2: 三个100面骰里小的两个之和
-    3d100l2: 三个100面骰里大的两个之和
-    dp, db: CoC 7th惩罚骰、奖励骰
-    3dp: 等价于dp+dp+dp
-
-    可用运算符(含义同Python):
-    +,-,*,/,%,//,**
-    
-    可用函数：
-    exp,log,log10,sin,cos,abs,sqrt,ceil,floor,round,max,min
-    
-    可用常量：
-    pi
+    '''
     '''
     
     parser = commandParser(add_help = False)
@@ -259,7 +243,7 @@ def roll(msg: miraicle.GroupMessage):
         return 0
     
     elif args.value:
-        roll_result = dice.parse_and_eval_dice(args.diceExpr)
+        roll_result = dice.DiceExpression(args.diceExpr).get_value()
         if not args.name:
             messgage_out = "某个...你没跟我讲到底是啥玩意的检定结果：\n"
         else:
@@ -280,8 +264,7 @@ def roll(msg: miraicle.GroupMessage):
         return 0
         
     else:        
-        roll_result = dice.parse_and_eval_dice(args.diceExpr)
-        reply_plain_text(msg, ''.join(roll_result[0]))
+        reply_plain_text(msg, str(dice.DiceExpression(args.diceExpr)))
         return 0
 
 @command(command_name = "ping")
