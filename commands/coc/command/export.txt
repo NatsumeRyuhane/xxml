@@ -1,0 +1,46 @@
+from commands.command import Command, CommandParser
+
+from libs.bot import Bot
+from libs.message import *
+import libs.dice as dice
+
+from bots.mirai import MiraiBot
+from bots.kook import KOOKBot
+import bots.kook.khl as khl
+
+import shlex
+
+import commands.coc.character as character
+from commands.coc.character import character_manager as cm
+
+@bot.command(prefixes = ["/", "."], name = "export")
+async def export(msg: khl.Message, *args):
+    char: character.Character = cm.get_player_current_character(msg.author_id)
+
+    if char is None:
+        await msg.reply(
+            khl.card.CardMessage(
+                khl.card.Card(
+                    khl.card.Module.Header(f"导出角色信息失败..."),
+                    khl.card.Module.Context(f"当前并没有正在使用的角色卡"),
+                    theme = khl.card.Types.Theme.DANGER
+                )
+            )
+        )
+        return
+    else:
+        set_str = ".st "
+
+        for d in char.properties:
+            for i in char.properties[d].keys():
+                set_str += f"{i}{char.properties[d][i]}"
+
+        await msg.reply(
+            khl.card.CardMessage(
+                khl.card.Card(
+                    khl.card.Module.Header(f"导出了「{char.name}」的角色参数"),
+                    khl.card.Module.Section(f"`{set_str}`"),
+                    theme = khl.card.Types.Theme.SUCCESS
+                )
+            )
+        )

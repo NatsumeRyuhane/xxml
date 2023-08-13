@@ -1,0 +1,12 @@
+
+config/
+logs/
+tmp/
+.idea/
+__pycache__/
+
+*.tmp
+*.cfg
+*.pyc
+
+config.json
