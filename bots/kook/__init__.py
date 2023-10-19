@@ -4,7 +4,7 @@ import logging
 from libs.message import *
 from libs.bot import *
 
-import bots.kook.khl as khl
+import khl
 from commands.command import command_manager
 
 
@@ -38,7 +38,7 @@ class KOOKBot(Bot):
 
         command_manager.run_command(self, rcvd_msg)
 
-    def parse_message(self, msg: khl.Message) -> Message:
+    def parse_message(self, msg: khl.Message) -> Message: 
         ctx = Context()
         ctx.direction = Context.Direction.INCOMING
 

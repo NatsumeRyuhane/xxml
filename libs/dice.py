@@ -3,6 +3,20 @@ from math import *
 import re
 
 
+def restricted_eval(expr: str):
+
+    allowed_names_list = [
+
+    ]
+
+    allowed_names = dict([(name, globals().get(name, None)) for name in allowed_names_list])
+
+    return eval(expr,
+                # __globals
+                { "__builtins__": None },
+                # __locals
+                allowed_names)
+
 class Dice:
 
     def __init__(self, count: int, face: int, bonus=None, penalty=None, name="", expr=""):
@@ -147,9 +161,9 @@ class DiceExpression:
             eval_expr = eval_expr.replace(d.name, str(d.get_value()))
 
         try:
-            result = eval(eval_expr,)
+            result = restricted_eval(eval_expr)
             return result
-        except Exception:
+        except Exception as e:
             raise ValueError(f"Unable to parse the dice expr: {self.raw_expr}")
 
     def get_max_value(self):
@@ -158,9 +172,9 @@ class DiceExpression:
             eval_expr = eval_expr.replace(d.name, str(d.get_max_value()))
 
         try:
-            result = eval(eval_expr, )
+            result = restricted_eval(eval_expr, )
             return result
-        except Exception:
+        except Exception as e:
             raise ValueError(f"Unable to parse the dice expr: {self.raw_expr}")
 
     def get_min_value(self):
@@ -169,9 +183,9 @@ class DiceExpression:
             eval_expr = eval_expr.replace(d.name, str(d.get_min_value()))
 
         try:
-            result = eval(eval_expr, )
+            result = restricted_eval(eval_expr, )
             return result
-        except Exception:
+        except Exception as e:
             raise ValueError(f"Unable to parse the dice expr: {self.raw_expr}")
 
     def __str__(self):

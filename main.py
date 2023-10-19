@@ -5,10 +5,12 @@ from datetime import datetime
 
 import threading
 import signal
-import sys
+import os
 
 time_start = datetime.now()
 log_filename = f"{time_start.year}-{str(time_start.month).zfill(2)}-{str(time_start.day).zfill(2)}_{str(time_start.hour).zfill(2)}_{str(time_start.minute).zfill(2)}_{str(time_start.second).zfill(2)}"
+
+os.makedirs("./logs/", exist_ok = True)
 
 with open(f"./logs/{log_filename}.log", 'w', encoding = 'utf-8') as f:
     f.truncate(0)
@@ -27,16 +29,11 @@ from bots.kook import KOOK
 active_bots = [AsyncMirai, KOOK]
 threads = []
 
-import libs.schedule
-@libs.schedule.scheduled_job(libs.schedule.Scheduler.every(3).seconds)
-def test():
-    logging.info(f"scheduled job")
-
-
 def on_sigint(*args, **kwargs):
     for ab in active_bots:
         ab.shutdown()
 
+# register signal handler
 signal.signal(signal.SIGINT, on_sigint)
 
 for ab in active_bots:
@@ -44,4 +41,5 @@ for ab in active_bots:
     t.start()
     threads.append(t)
 
-signal.pause()
+for t in threads:
+    t.join()

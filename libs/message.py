@@ -3,7 +3,7 @@ from enum import Enum
 from abc import abstractmethod, ABC
 import base64 as b64
 
-import khl.card.card_message
+from khl.card.card_message import CardMessage as KOOKCardMsg
 
 
 class Context:
@@ -116,7 +116,7 @@ class Message:
                 self.meta.append(c)
             elif isinstance(c, str):
                 self.components.append(Text(c))
-            elif isinstance(c, khl.card.card_message.CardMessage):
+            elif isinstance(c, KOOKCardMsg):
                 self.components.append(KOOKCardMessage(c))
             else:
                 self.components.append(c)
@@ -339,7 +339,7 @@ class File(FileComponent, ABC):
 
 class KOOKCardMessage(MessageComponent):
 
-    def __init__(self, content: khl.card.card_message.CardMessage):
+    def __init__(self, content: KOOKCardMsg):
         self.content = content
 
     def __str__(self):

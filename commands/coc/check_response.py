@@ -5,7 +5,7 @@ from libs.message import *
 import libs.dice as dice
 
 from bots.mirai import MiraiBot
-import bots.kook.khl as khl
+import khl
 
 import shlex
 import random

@@ -6,7 +6,7 @@ import libs.dice as dice
 
 from bots.mirai import MiraiBot
 from bots.kook import KOOKBot
-import bots.kook.khl as khl
+import khl
 
 import shlex
 
