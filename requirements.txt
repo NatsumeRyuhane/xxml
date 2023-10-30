@@ -1,5 +1,4 @@
-APScheduler~=3.10.1
-khl~=2.0.1
-aiohttp~=3.8.5
 requests~=2.31.0
 websocket-client~=1.6.1
+aiohttp~=3.8.5
+khl.py~=0.3.16
