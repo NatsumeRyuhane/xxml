@@ -6,7 +6,7 @@ from libs.bot import Bot
 from libs.message import *
 import libs.dice as dice
 
-from bots.mirai import MiraiBot
+from bots.kook import KOOKBot
 import khl
 
 import shlex
@@ -33,27 +33,16 @@ async def rh(bot: Bot, msg: Message):
                     f"豆豆叫我给{msg.context.sender_name}扔了个大失败！"
                 ]
 
-                if isinstance(bot, MiraiBot):
-                    await bot.reply_message(msg, random.choice(prompt_messages))
-
-                    result_msg_context = Context(context_type = Context.MessageContextType.PRIVATE, sender_id = msg.context.sender_id)
-
-                    result_msg = Message(result_msg_context, components = [
-                        Text("暗骰结果\n"),
-                        Text(f"{dice_expr} = {outcome.get_value()}")
-                    ])
-                    await bot.send_message(result_msg)
-
-                else:
+                if isinstance(bot, KOOKBot):
                     await bot.reply_message(msg, KOOKCardMessage(
-                            khl.card.CardMessage(
-                                khl.card.Card(
-                                    khl.card.Module.Header(random.choice(prompt_messages)),
-                                    khl.card.Module.Context(f"但这到底意味着什么呢？")
-                                )
+                        khl.card.CardMessage(
+                            khl.card.Card(
+                                khl.card.Module.Header(random.choice(prompt_messages)),
+                                khl.card.Module.Context(f"但这到底意味着什么呢？")
                             )
                         )
                     )
+                                            )
 
                     result_msg_context = msg.context.duplicate()
                     result_msg_context.visibility = Context.Visibility.PRIVATE
@@ -75,11 +64,20 @@ async def rh(bot: Bot, msg: Message):
                     ])
 
                     await bot.send_message(result_msg, use_qoute = False)
+                else:
+                    await bot.reply_message(msg, random.choice(prompt_messages))
+
+                    result_msg_context = Context(context_type = Context.MessageContextType.PRIVATE, sender_id = msg.context.sender_id)
+
+                    result_msg = Message(result_msg_context, components = [
+                        Text("暗骰结果\n"),
+                        Text(f"{dice_expr} = {outcome.get_value()}")
+                    ])
+                    await bot.send_message(result_msg)
+
 
             except NotImplementedError or Exception:
-                if isinstance(bot, MiraiBot):
-                    await bot.reply_message(msg, f"小小毛龙看不太懂你说的{dice_expr}是什么意思。\n去找小毛龙的话他也许能看懂，但是他会揍你。")
-                else:
+                if isinstance(bot, KOOKBot):
                     await msg.reply(
                         khl.card.CardMessage(
                             khl.card.Card(
@@ -92,5 +90,8 @@ async def rh(bot: Bot, msg: Message):
                             )
                         )
                     )
+                else:
+                    await bot.reply_message(msg, f"小小毛龙看不太懂你说的{dice_expr}是什么意思。\n去找小毛龙的话他也许能看懂，但是他会揍你。")
+
     except (SystemExit, Exception) as e:
         pass

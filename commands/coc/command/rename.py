@@ -22,9 +22,7 @@ async def rename(bot: Bot, msg: Message):
 
         char: character.Character = cm.get_player_current_character(msg.context.sender_id)
         if char is None:
-            if isinstance(bot, MiraiBot):
-                await bot.reply_message(msg, "重命名失败。当前并没有正在使用的角色卡。")
-            elif isinstance(bot, KOOKBot):
+            if isinstance(bot, KOOKBot):
                 await msg.reply(
                     khl.card.CardMessage(
                         khl.card.Card(
@@ -34,14 +32,14 @@ async def rename(bot: Bot, msg: Message):
                         )
                     )
                 )
-                return
+            else:
+                await bot.reply_message(msg, "重命名失败。当前并没有正在使用的角色卡。")
 
+            return
         prev_name = char.name
         char.name = new_name
 
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"「{prev_name}」已重命名为「{char.name}」")
-        elif isinstance(bot, KOOKBot):
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -50,5 +48,7 @@ async def rename(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, f"「{prev_name}」已重命名为「{char.name}」")
     except IndexError:
         pass

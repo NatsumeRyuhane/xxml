@@ -4,7 +4,6 @@ from libs.bot import Bot
 from libs.message import *
 import libs.dice as dice
 
-from bots.mirai import MiraiBot
 from bots.kook import KOOKBot
 import khl
 
@@ -18,9 +17,7 @@ from commands.coc.character import character_manager as cm
 async def switch(bot: Bot, msg: Message):
 
     async def switch_successful():
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"{msg.context.sender_name}切换角色「{cm.get_player_current_character(msg.context.sender_id).name}」成功")
-        elif isinstance(bot, KOOKBot):
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -30,11 +27,11 @@ async def switch(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, f"{msg.context.sender_name}切换角色「{cm.get_player_current_character(msg.context.sender_id).name}」成功")
 
     async def not_your_character_card_warning():
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"但...这不是属于你的角色卡")
-        elif isinstance(bot, KOOKBot):
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -45,6 +42,8 @@ async def switch(bot: Bot, msg: Message):
                 ),
                 use_quote = False
             )
+        else:
+            await bot.reply_message(msg, f"但...这不是属于你的角色卡")
 
     parser = CommandParser(add_help = False)
     parser.add_argument("target", nargs = "?", default = None)
@@ -71,9 +70,7 @@ async def switch(bot: Bot, msg: Message):
                     if cm.get_player_current_character(msg.context.sender_id).owner_id != msg.context.sender_id:
                         await not_your_character_card_warning()
                 else:
-                    if isinstance(bot, MiraiBot):
-                        await bot.reply_message(msg, "因为存在重名角色卡的关系，通过角色名切换角色失败...\n\n(可以尝试使用.ls获取你的角色卡ID并通过ID切换角色)")
-                    elif isinstance(bot, KOOKBot):
+                    if isinstance(bot, KOOKBot):
                         await msg.reply(
                             khl.card.CardMessage(
                                 khl.card.Card(
@@ -83,12 +80,12 @@ async def switch(bot: Bot, msg: Message):
                                 )
                             )
                         )
+                    else:
+                        await bot.reply_message(msg, "因为存在重名角色卡的关系，通过角色名切换角色失败...\n\n(可以尝试使用.ls获取你的角色卡ID并通过ID切换角色)")
 
                     return
             else:
-                if isinstance(bot, MiraiBot):
-                    await bot.reply_message(msg, "切换角色失败...\n请检查你输入的角色名或角色卡ID是否正确")
-                elif isinstance(bot, KOOKBot):
+                if isinstance(bot, KOOKBot):
                     await msg.reply(
                         khl.card.CardMessage(
                             khl.card.Card(
@@ -98,5 +95,7 @@ async def switch(bot: Bot, msg: Message):
                             )
                         )
                     )
+                else:
+                    await bot.reply_message(msg, "切换角色失败...\n请检查你输入的角色名或角色卡ID是否正确")
     except Exception as e:
         pass

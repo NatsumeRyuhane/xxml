@@ -4,7 +4,7 @@ from libs.bot import Bot
 from libs.message import *
 import libs.dice as dice
 
-from bots.mirai import MiraiBot
+from bots.kook import KOOKBot
 import khl
 
 import shlex
@@ -18,9 +18,7 @@ async def status(bot: Bot, msg: Message):
     char: character.Character = cm.get_player_current_character(msg.context.sender_id)
 
     if char is None:
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有正在使用的角色卡")
-        else:
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -29,14 +27,12 @@ async def status(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有正在使用的角色卡")
+
     else:
         attrs = ""
-        if isinstance(bot, MiraiBot):
-            for attr in char.properties["status"]:
-                attrs += f"{attr} {char.get(attr)}    "
-
-            await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」的状态详情\n\n{attrs}")
-        else:
+        if isinstance(bot, KOOKBot):
             for attr in char.properties["status"]:
                 attrs += f"{attr}  (font){char.get(attr)}(font)[primary]    "
 
@@ -49,3 +45,8 @@ async def status(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            for attr in char.properties["status"]:
+                attrs += f"{attr} {char.get(attr)}    "
+
+            await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」的状态详情\n\n{attrs}")

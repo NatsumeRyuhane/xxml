@@ -4,7 +4,7 @@ from libs.bot import Bot
 from libs.message import *
 import libs.dice as dice
 
-from bots.mirai import MiraiBot
+from bots.kook import KOOKBot
 import khl
 
 import shlex
@@ -18,9 +18,7 @@ async def show(bot: Bot, msg: Message):
     char: character.Character = cm.get_player_current_character(msg.context.sender_id)
 
     if char is None:
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有正在使用的角色卡")
-        else:
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -29,6 +27,8 @@ async def show(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有正在使用的角色卡")
     else:
         args = shlex.split(msg.get_texts())
 
@@ -36,9 +36,7 @@ async def show(bot: Bot, msg: Message):
         property_val = char.get(property_name)
 
         if property_val is None:
-            if isinstance(bot, MiraiBot):
-                await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」未设置「{property_name}」属性")
-            else:
+            if isinstance(bot, KOOKBot):
                 await msg.reply(
                     khl.card.CardMessage(
                         khl.card.Card(
@@ -48,10 +46,10 @@ async def show(bot: Bot, msg: Message):
                         )
                     )
                 )
-        else:
-            if isinstance(bot, MiraiBot):
-                await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」的「{property_name}」属性为{property_val}")
             else:
+                await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」未设置「{property_name}」属性")
+        else:
+            if isinstance(bot, KOOKBot):
                 await msg.reply(
                     khl.card.CardMessage(
                         khl.card.Card(
@@ -61,3 +59,5 @@ async def show(bot: Bot, msg: Message):
                         )
                     )
                 )
+            else:
+                await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」的「{property_name}」属性为{property_val}")

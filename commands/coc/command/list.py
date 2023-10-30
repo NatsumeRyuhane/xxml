@@ -19,9 +19,8 @@ async def _list(bot: Bot, msg: Message):
     chars = cm.get_character_by_owner(msg.context.sender_id)
 
     if chars == []:
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有登记的角色卡")
-        elif isinstance(bot, KOOKBot):
+
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -30,6 +29,8 @@ async def _list(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有登记的角色卡")
     else:
         if cm.get_player_current_character(msg.context.sender_id) is None:
             prompt = f"以下是{msg.context.sender_name}登记的所有角色卡："
@@ -40,9 +41,7 @@ async def _list(bot: Bot, msg: Message):
         for c in chars:
             char_info += f"[{c.id}]  {c.name}\n"
 
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, content = f"{prompt}\n\n{char_info}")
-        elif isinstance(bot, KOOKBot):
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -54,3 +53,5 @@ async def _list(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, content = f"{prompt}\n\n{char_info}")

@@ -19,9 +19,7 @@ async def attr(bot: Bot, msg: Message):
     char: character.Character = cm.get_player_current_character(msg.context.sender_id)
 
     if char is None:
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有正在使用的角色卡")
-        elif isinstance(bot, KOOKBot):
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -30,21 +28,13 @@ async def attr(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有正在使用的角色卡")
     else:
         attrs = ""
         count = 0
 
-        if isinstance(bot, MiraiBot):
-            for attr in char.properties["attributes"]:
-                attrs += f"{attr} {char.get(attr)}    "
-                count += 1
-
-                if count == 2:
-                    attrs += "\n"
-                    count = 0
-
-            await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」的属性详情\n\n属性合计：{char.get_attributes_value_sum()[0]} + {char.get_attributes_value_sum()[1]}\n\n{attrs}")
-        else:
+        if isinstance(bot, KOOKBot):
             for attr in char.properties["attributes"]:
                 attrs += f"{attr}  (font){char.get(attr)}(font)[primary]    "
                 count += 1
@@ -67,3 +57,13 @@ async def attr(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            for attr in char.properties["attributes"]:
+                attrs += f"{attr} {char.get(attr)}    "
+                count += 1
+
+                if count == 2:
+                    attrs += "\n"
+                    count = 0
+
+            await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」的属性详情\n\n属性合计：{char.get_attributes_value_sum()[0]} + {char.get_attributes_value_sum()[1]}\n\n{attrs}")

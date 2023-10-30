@@ -27,13 +27,8 @@ async def r(bot: Bot, msg: Message):
             try:
                 outcome = dice.DiceExpression(dice_expr)
 
-                if isinstance(bot, MiraiBot):
-                    await bot.reply_message(msg, content = [
-                        Text(f"{msg.context.sender_name}扔出了{dice_expr}...\n"),
-                        Text(f"结果：{outcome}"),
-                    ])
-                elif isinstance(bot, KOOKBot):
-                    bot.reply_message(msg,
+                if isinstance(bot, KOOKBot):
+                    await bot.reply_message(msg,
                         content = khl.card.CardMessage(
                             khl.card.Card(
                                 khl.card.Module.Header(f"{msg.context.sender_name}扔出了..."),
@@ -47,11 +42,12 @@ async def r(bot: Bot, msg: Message):
                         use_quote = False
                     )
                 else:
-                    raise NotImplementedError
-            except NotImplementedError or Exception:
-                if isinstance(bot, MiraiBot):
-                    await bot.reply_message(msg, f"小小毛龙看不太懂你说的{dice_expr}是什么意思。\n去找小毛龙的话他也许能看懂，但是他会揍你。")
-                else:
+                    await bot.reply_message(msg, content = [
+                        Text(f"{msg.context.sender_name}扔出了{dice_expr}...\n"),
+                        Text(f"结果：{outcome}"),
+                    ])
+            except Exception as e:
+                if isinstance(bot, KOOKBot):
                     await msg.reply(
                         khl.card.CardMessage(
                             khl.card.Card(
@@ -64,6 +60,9 @@ async def r(bot: Bot, msg: Message):
                             )
                         )
                     )
+                else:
+                    await bot.reply_message(msg, f"小小毛龙看不太懂你说的{dice_expr}是什么意思。\n去找小毛龙的话他也许能看懂，但是他会揍你。")
+
     except (SystemExit, Exception) as e:
         await bot.reply_message(msg, Text("小毛龙没看懂你的指令怎么写的...？"))
         return -1

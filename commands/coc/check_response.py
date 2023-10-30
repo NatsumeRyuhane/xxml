@@ -4,7 +4,7 @@ from libs.bot import Bot
 from libs.message import *
 import libs.dice as dice
 
-from bots.mirai import MiraiBot
+from bots.kook import KOOKBot
 import khl
 
 import shlex
@@ -90,24 +90,8 @@ def construct_check_response(bot: Bot, msg: Message, result: check.Check) -> lis
         "image": None
         }
     }
-    if isinstance(bot, MiraiBot):
-        response = [
-            Text(f"检定结论：{success_level_dict[result.result_level]['level']}\n"),
-            Text(f"{random.choice(success_level_dict[result.result_level]['comments'])}\n"),
-        ]
 
-        if success_level_dict[result.result_level]['image']:
-            response.append(Image(filepath = success_level_dict[result.result_level]['image']))
-
-        response.append(Text("\n"))
-
-        if result.property_value_modifier.get_value() == 0:
-            response.append(Text(f"详情:\n{name}的「{result.property_name}」技能：{result.property_value} \n\n{result.outcome} / {result.property_value}"))
-        else:
-            response.append(Text(f"详情:\n{name}的「{result.property_name}」技能：{result.property_value} ({result.property_value_modifier})\n\n{result.outcome} / {result.property_value + result.property_value_modifier.get_value()}"))
-
-        return response
-    else:
+    if isinstance(bot, KOOKBot):
         response = khl.card.Card()
 
         response.append(khl.card.Module.Header(random.choice(prompts)))
@@ -122,5 +106,22 @@ def construct_check_response(bot: Bot, msg: Message, result: check.Check) -> lis
                 f"**详情:**\n{name}的「{result.property_name}」技能：{result.property_value} ({result.property_value_modifier})\n\n{result.outcome} / {result.property_value + result.property_value_modifier.get_value()}"))
 
         response.color = khl.card.Color(hex_color = random.choice(success_level_dict[result.result_level]['color']))
+
+        return response
+    else:
+        response = [
+            Text(f"检定结论：{success_level_dict[result.result_level]['level']}\n"),
+            Text(f"{random.choice(success_level_dict[result.result_level]['comments'])}\n"),
+        ]
+
+        if success_level_dict[result.result_level]['image']:
+            response.append(Image(filepath = success_level_dict[result.result_level]['image']))
+
+        response.append(Text("\n"))
+
+        if result.property_value_modifier.get_value() == 0:
+            response.append(Text(f"详情:\n{name}的「{result.property_name}」技能：{result.property_value} \n\n{result.outcome} / {result.property_value}"))
+        else:
+            response.append(Text(f"详情:\n{name}的「{result.property_name}」技能：{result.property_value} ({result.property_value_modifier})\n\n{result.outcome} / {result.property_value + result.property_value_modifier.get_value()}"))
 
         return response

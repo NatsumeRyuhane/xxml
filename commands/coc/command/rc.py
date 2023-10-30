@@ -4,7 +4,7 @@ from libs.bot import Bot
 from libs.message import *
 import libs.dice as dice
 
-from bots.mirai import MiraiBot
+from bots.kook import KOOKBot
 import khl
 
 import shlex
@@ -45,20 +45,7 @@ async def rc(bot: Bot, msg: Message):
         await bot.reply_message(msg, construct_check_response(bot, msg, result))
 
     except (SystemExit, Exception) as e:
-        if isinstance(bot, MiraiBot):
-            message_out = [Text(f"无法完成检定...\n\n")]
-
-            if prop_name is None:
-                message_out.append(Text(f"至少告诉我你要检定啥吧————"))
-            elif (cm.get_player_current_character(msg.context.sender_id) is not None) and (prop_val is None):
-                message_out.append(Text(f"你的角色没有录入这项属性，请录入属性或带值检定"))
-            elif (cm.get_player_current_character(msg.context.sender_id) is None) and (prop_val is None):
-                message_out.append(Text(f"你目前没有绑定的角色卡，请带值检定"))
-            else:
-                message_out.append(Text(f"未知错误，你现在只能找小毛龙了..."))
-
-            await bot.reply_message(msg, message_out)
-        else:
+        if isinstance(bot, KOOKBot):
             response = khl.card.Card(
                 khl.card.Module.Header(f"无法完成检定..."),
                 theme = khl.card.Types.Theme.DANGER
@@ -74,3 +61,16 @@ async def rc(bot: Bot, msg: Message):
                 response.append(khl.card.Module.Context(f"未知错误，你现在只能找小毛龙了..."))
 
             await msg.reply(khl.card.CardMessage(response))
+        else:
+            message_out = [Text(f"无法完成检定...\n\n")]
+
+            if prop_name is None:
+                message_out.append(Text(f"至少告诉我你要检定啥吧————"))
+            elif (cm.get_player_current_character(msg.context.sender_id) is not None) and (prop_val is None):
+                message_out.append(Text(f"你的角色没有录入这项属性，请录入属性或带值检定"))
+            elif (cm.get_player_current_character(msg.context.sender_id) is None) and (prop_val is None):
+                message_out.append(Text(f"你目前没有绑定的角色卡，请带值检定"))
+            else:
+                message_out.append(Text(f"未知错误，你现在只能找小毛龙了..."))
+
+            await bot.reply_message(msg, message_out)

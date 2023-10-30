@@ -22,9 +22,7 @@ async def new(bot: Bot, msg: Message):
 
         cm.add_character(char_name, msg.context.sender_id)
 
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"你好，{char_name}。\n\n角色卡创建成功，已自动切换你使用的角色卡。\n接下来请使用 .st 导入角色属性。\n\n这张角色卡的ID为{cm.get_player_current_character(msg.context.sender_id).id}")
-        elif isinstance(bot, KOOKBot):
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -35,8 +33,10 @@ async def new(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, f"你好，{char_name}。\n\n角色卡创建成功，已自动切换你使用的角色卡。\n接下来请使用 .st 导入角色属性。\n\n这张角色卡的ID为{cm.get_player_current_character(msg.context.sender_id).id}")
     except IndexError:
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"呃，你确定不告诉我你这卡叫啥名字吗？")
-        elif isinstance(bot, KOOKBot):
+        if isinstance(bot, KOOKBot):
             pass
+        else:
+            await bot.reply_message(msg, f"呃，你确定不告诉我你这卡叫啥名字吗？")

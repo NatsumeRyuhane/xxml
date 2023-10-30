@@ -4,7 +4,7 @@ from libs.bot import Bot
 from libs.message import *
 import libs.dice as dice
 
-from bots.mirai import MiraiBot
+from bots.kook import KOOKBot
 import khl
 
 import shlex
@@ -46,12 +46,7 @@ async def sc(bot: Bot, msg: Message):
 
         char: character.Character = cm.get_player_current_character(msg.context.sender_id)
         if char is None:
-            if isinstance(bot, MiraiBot):
-                await bot.reply_message(msg, content = [
-                    Text("无法完成检定...\n\n快速sancheck只能在使用角色卡的状态下进行"),
-
-                ])
-            else:
+            if isinstance(bot, KOOKBot):
                 await msg.reply(
                     khl.card.CardMessage(
                         khl.card.Card(
@@ -61,7 +56,13 @@ async def sc(bot: Bot, msg: Message):
                         )
                     )
                 )
-                return
+            else:
+                await bot.reply_message(msg, content = [
+                    Text("无法完成检定...\n\n快速sancheck只能在使用角色卡的状态下进行"),
+
+                ])
+
+            return
         else:
             try:
                 precheck_san = char.get("SAN")
@@ -86,12 +87,7 @@ async def sc(bot: Bot, msg: Message):
                     san_damage_value = san_damage.get_value()
                     char.update("SAN", -1 * san_damage_value)
 
-                if isinstance(bot, MiraiBot):
-                    response = [
-                        Text(f"{char.name}的理智受到了冲击！\n\n"),
-                        Text(f"理智 -{san_damage_value}  [{precheck_san} ➔ {char.get('SAN')}]\n\n")
-                    ]
-                else:
+                if isinstance(bot, KOOKBot):
                     response = khl.card.Card(
                         khl.card.Module.Header(f"{char.name}的理智受到了冲击！"),
                         khl.card.Module.Section(
@@ -100,6 +96,11 @@ async def sc(bot: Bot, msg: Message):
                         ),
                         theme = khl.card.Types.Theme.WARNING
                     )
+                else:
+                    response = [
+                        Text(f"{char.name}的理智受到了冲击！\n\n"),
+                        Text(f"理智 -{san_damage_value}  [{precheck_san} ➔ {char.get('SAN')}]\n\n")
+                    ]
 
                 if san_damage_value >= 5:
                     int_result = check.Check(
@@ -110,11 +111,7 @@ async def sc(bot: Bot, msg: Message):
                         temp_insanity = random.choice(list(temp_insanity_dict.keys()))
                         duration = dice.DiceExpression('1d10')
 
-                        if isinstance(bot, MiraiBot):
-                            response.append(Text(f"深入灵魂的恐惧击碎了你的精神...\n获得临时恐惧: {temp_insanity}, 持续{duration.get_value()}轮\n\n"))
-                            response.append(Text(f"{temp_insanity_dict[temp_insanity]}\n\n"))
-                            response.append(Text(f"详情\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}\n  [智力检定] 1d100 = {int_result.outcome_value} / {char.get('INT')}\n  [临时疯狂时长] 1d10 = {duration.get_value()}"))
-                        else:
+                        if isinstance(bot, KOOKBot):
                             response.append(khl.card.Module.Divider())
                             response.append(khl.card.Module.Section(khl.card.Element.Text(
                                 f"*深入灵魂的恐惧击碎了你的精神...*\n获得临时恐惧: **{temp_insanity}**, 持续**{duration.get_value()}**轮")))
@@ -124,11 +121,13 @@ async def sc(bot: Bot, msg: Message):
                             response.append(khl.card.Module.Context(
                                 f"**详情**\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}\n  [智力检定] 1d100 = {int_result.outcome_value} / {char.get('INT')}\n  [临时疯狂时长] 1d10 = {duration.get_value()}"))
                             response.theme = khl.card.Types.Theme.DANGER
-                    else:
-                        if isinstance(bot, MiraiBot):
-                            response.append(Text("你无法理解你所见证的巨大的恐怖背后隐藏着什么，但也许，这是一种幸运。\n\n"))
-                            response.append(Text(f"详情\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}\n  [智力检定] 1d100 = {int_result.outcome_value} / {char.get('INT')}"))
                         else:
+                            response.append(Text(f"深入灵魂的恐惧击碎了你的精神...\n获得临时恐惧: {temp_insanity}, 持续{duration.get_value()}轮\n\n"))
+                            response.append(Text(f"{temp_insanity_dict[temp_insanity]}\n\n"))
+                            response.append(Text(f"详情\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}\n  [智力检定] 1d100 = {int_result.outcome_value} / {char.get('INT')}\n  [临时疯狂时长] 1d10 = {duration.get_value()}"))
+
+                    else:
+                        if isinstance(bot, KOOKBot):
                             response.append(khl.card.Module.Divider())
                             response.append(
                                 khl.card.Module.Context("*你无法理解你所见证的巨大的恐怖背后隐藏着什么，但也许，这是一种幸运。*"))
@@ -137,21 +136,20 @@ async def sc(bot: Bot, msg: Message):
                             response.append(khl.card.Module.Context(
                                 f"**详情**\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}\n  [智力检定] 1d100 = {int_result.outcome_value} / {char.get('INT')}"))
                             response.theme = khl.card.Types.Theme.WARNING
+                        else:
+                            response.append(Text("你无法理解你所见证的巨大的恐怖背后隐藏着什么，但也许，这是一种幸运。\n\n"))
+                            response.append(Text(f"详情\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}\n  [智力检定] 1d100 = {int_result.outcome_value} / {char.get('INT')}"))
                 else:
-                    if isinstance(bot, MiraiBot):
-                        response.append(Text(f"详情\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}"))
-                    else:
+                    if isinstance(bot, KOOKBot):
                         response.append(khl.card.Module.Context(
                             f"**详情**\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}"))
                         response.theme = khl.card.Types.Theme.SUCCESS
+                    else:
+                        response.append(Text(f"详情\n  [理智检定] 1d100 = {result.outcome_value} / {precheck_san}\n  [理智损失] {san_damage.raw_expr} = {san_damage_value}"))
 
                 await bot.reply_message(msg, response)
             except Exception as e:
-                if isinstance(bot, MiraiBot):
-                    await bot.reply_message(msg, content = [
-                        Text("无法完成检定...\n\n请检查给定的sc表达式是否正确")
-                    ])
-                else:
+                if isinstance(bot, KOOKBot):
                     await msg.reply(
                         khl.card.CardMessage(
                             khl.card.Card(
@@ -161,7 +159,10 @@ async def sc(bot: Bot, msg: Message):
                             )
                         )
                     )
-    except SystemExit:
-        pass
-    except Exception as e:
+                else:
+                    await bot.reply_message(msg, content = [
+                        Text("无法完成检定...\n\n请检查给定的sc表达式是否正确")
+                    ])
+
+    except (Exception, SystemExit) as e:
         pass

@@ -4,7 +4,7 @@ from libs.bot import Bot
 from libs.message import *
 import libs.dice as dice
 
-from bots.mirai import MiraiBot
+from bots.kook import KOOKBot
 import khl
 
 import shlex
@@ -18,9 +18,7 @@ async def skills(bot: Bot, msg: Message):
     char: character.Character = cm.get_player_current_character(msg.context.sender_id)
 
     if char is None:
-        if isinstance(bot, MiraiBot):
-            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有正在使用的角色卡")
-        else:
+        if isinstance(bot, KOOKBot):
             await msg.reply(
                 khl.card.CardMessage(
                     khl.card.Card(
@@ -29,21 +27,13 @@ async def skills(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            await bot.reply_message(msg, f"{msg.context.sender_name}目前没有正在使用的角色卡")
     else:
         attrs = ""
         count = 0
         skills_sorted = sorted(char.properties["skills"].items(), key = lambda x: x[1], reverse = True)
-        if isinstance(bot, MiraiBot):
-            for skill in skills_sorted:
-                attrs += f"{skill[0]} {char.get(skill[0])}    "
-                count += 1
-
-                if count == 3:
-                    attrs += "\n"
-                    count = 0
-
-            await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」的技能详情\n\n{attrs}")
-        else:
+        if isinstance(bot, KOOKBot):
             for skill in skills_sorted:
                 attrs += f"{skill[0]}  (font){char.get(skill[0])}(font)[primary]    "
                 count += 1
@@ -61,3 +51,13 @@ async def skills(bot: Bot, msg: Message):
                     )
                 )
             )
+        else:
+            for skill in skills_sorted:
+                attrs += f"{skill[0]} {char.get(skill[0])}    "
+                count += 1
+
+                if count == 3:
+                    attrs += "\n"
+                    count = 0
+
+            await bot.reply_message(msg, f"「{cm.get_player_current_character(msg.context.sender_id).name}」的技能详情\n\n{attrs}")
