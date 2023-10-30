@@ -48,7 +48,7 @@ class Bot(ABC):
         pass
 
     @abstractmethod
-    async def send_message(self, msg: Message, use_qoute: bool) -> None:
+    async def send_message(self, msg: Message, use_quote: bool = False) -> None:
         """
         send the message as the details specified in the Message object
         """

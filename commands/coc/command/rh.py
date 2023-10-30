@@ -63,7 +63,7 @@ async def rh(bot: Bot, msg: Message):
                         )
                     ])
 
-                    await bot.send_message(result_msg, use_qoute = False)
+                    await bot.send_message(result_msg, use_quote = False)
                 else:
                     await bot.reply_message(msg, random.choice(prompt_messages))
 
