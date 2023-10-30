@@ -110,7 +110,11 @@ class CommandManager(metaclass = Singleton):
                 command_object = self.get_command_object(command_name)
                 command_function = self.get_command_function(command_name)
 
-                asyncio.create_task(command_function(bot, msg))
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(command_function(bot, msg))
+                except RuntimeError:
+                    asyncio.run(command_function(bot, msg))
 
         except Exception:
             logging.warning(f"Error running command {command_name}. Traceback:", exc_info = True)
