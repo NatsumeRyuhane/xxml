@@ -31,7 +31,7 @@ class AsyncMirai(metaclass=Singleton):
         """
         self.qq: int = qq
         self.verify_key: str = verify_key
-        self.base_url: str = f'{adapter}://{host}:{port}'
+        self.base_url: str = f"{adapter}://{host}:{port}"
         self.session_key: Optional[str] = session_key
         self.adapter: str = adapter
 
