@@ -140,7 +140,7 @@ class KOOKBot(Bot):
         else:
             raise NotImplementedError()
 
-    def reply_message(self, msg: Message, content: MessageComponent | list[MessageComponent] | str, use_quote: bool = True) -> None:
+    async def reply_message(self, msg: Message, content: MessageComponent | list[MessageComponent] | str, use_quote: bool = True) -> None:
         if isinstance(content, MessageComponent):
             content = [content]
 
@@ -155,7 +155,7 @@ class KOOKBot(Bot):
         if use_quote:
             msg_out.add_component(Quote(target_message_id = msg.context.msg_id))
 
-        self.send_message(msg_out, use_quote)
+        await self.send_message(msg_out, use_quote)
 
     def shutdown(self):
         super().shutdown()
