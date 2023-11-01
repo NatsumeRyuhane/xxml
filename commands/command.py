@@ -3,10 +3,10 @@ import argparse
 import shlex
 import asyncio
 
-import commands
 from libs.message import Message
 from libs.bot import Bot
 from libs.singleton import Singleton
+
 
 class CommandParser(argparse.ArgumentParser):
     """Custom ArgumentParser that overrides _print_message()"""
@@ -19,79 +19,77 @@ class CommandParser(argparse.ArgumentParser):
 class CommandManager(metaclass = Singleton):
     def __init__(self, command_prefix = '.') -> None:
         self.command_prefix = command_prefix
-        self.command_dict = {}
-        self.command_alias_dict = {}
 
-    def register_command(self, command_object, command_function):
-        # register the command to a dict
-        # TODO: Check illegal and duplicate names
+        self.commands: dict[str, Command] = {}
+        self.command_aliases: dict[str, str] = {}
+        self.command_groups: dict[str, list[str]] = {"default": []}
 
-        if command_object.command_group != "default":
-            logging.info(f"Registering command [{command_object.command_group}] > [{command_object.name}]")
+        self.context_actions: dict[str, ContextActions] = {}
+
+    def register_command(self, command_object):
+        if command_object.name in self.commands.keys():
+            raise KeyError(f"Command name [{command_object.name}] inflicts with previously registered command")
+
+        if command_object.command_group == "default":
+            logging.info(f"Registering new command [{command_object.name}]")
         else:
-            logging.info(f"Registering command [{command_object.name}]")
+            if command_object.command_group not in self.command_groups.keys():
+                logging.info(f"Registering new command group [{command_object.command_group}]")
+                self.command_groups[command_object.command_group] = []
 
-        if command_object.name in self.command_dict.keys():
-            raise KeyError(f"Command name \"{command_object.name}\" inflicts with previously registered command")
+            logging.info(f"Registering new command [{command_object.command_group}] > [{command_object.name}]")
+            self.command_groups[command_object.command_group].append(command_object.name)
 
-        self.command_dict[command_object.name] = (command_function, command_object)
+        self.commands[command_object.name] = command_object
+
         if command_object.aliases:
             for alias in command_object.aliases:
                 logging.info(f"Registering command alias [{alias}] for command [{command_object.name}]")
 
-                if alias in self.command_alias_dict.keys():
-                    logging.error(f"Registering command alias [{alias}] infliction detected, skipping this alias for command [{command_object.name}]")
+                if alias in self.command_aliases.keys():
+                    logging.error(f"Registering command alias [{alias}] inflicts with previously registered alias, skipping this alias for command [{command_object.name}]")
                 else:
-                    self.command_alias_dict[alias] = command_object.name
+                    self.command_aliases[alias] = command_object.name
 
     def parse_command_from_msg(self, msg: Message) -> str | None:
         try:
             args = shlex.split(msg.get_texts())
             if args and args[0][0] == self.command_prefix:
-                if args[0][1:] in self.command_dict.keys():
+                if args[0][1:] in self.commands.keys():
                     return args[0][1:]
-                elif args[0][1:] in self.command_alias_dict.keys():
+                elif args[0][1:] in self.command_aliases.keys():
                     return args[0][1:]
 
             return None
         except Exception as e:
+            logging.error(e)
             return None
 
     def is_registered_command(self, command: str) -> bool:
-        command_signature = command.replace(self.command_prefix, '')
+        command_name = command.replace(self.command_prefix, '')
 
-        if command_signature in self.command_dict.keys():
+        if command_name in self.commands.keys():
             return True
         else:
             return False
 
     def is_command_alias(self, alias: str) -> bool:
-        command_signature = alias.replace(self.command_prefix, '')
+        command_alias = alias.replace(self.command_prefix, '')
 
-        if command_signature in self.command_alias_dict.keys():
+        if command_alias in self.command_aliases.keys():
             return True
         else:
             return False
 
-    def get_command_complex(self, command_name: str):
+    def get_command_object(self, command_name: str):
         parsed_command_name = command_name.replace(self.command_prefix, '')
 
         if self.is_registered_command(parsed_command_name):
-            return self.command_dict[parsed_command_name]
+            return self.commands[parsed_command_name]
         if self.is_command_alias(parsed_command_name):
-            return self.command_dict[self.command_alias_dict[parsed_command_name]]
+            return self.commands[self.command_aliases[parsed_command_name]]
         else:
             return None
-
-    def get_command_function(self, command_name: str) -> callable:
-        command_object = self.get_command_complex(command_name)
-        if command_object:
-            return command_object[0]
-
-    def get_command_object(self, command_name: str):
-        command_object = self.get_command_complex(command_name)
-        if command_object:
-            return command_object[1]
 
     def run_command(self, bot: Bot, msg: Message):
         """
@@ -103,48 +101,63 @@ class CommandManager(metaclass = Singleton):
             if command_name:
                 if self.is_command_alias(command_name):
                     logging.info(
-                        f"Resolved command alias [{command_name}] to command [{self.command_alias_dict[command_name]}] and running")
+                        f"Resolved command alias [{command_name}] to command [{self.command_aliases[command_name]}] and running")
                 else:
                     logging.info(f"Running command [{command_name}]")
 
                 command_object = self.get_command_object(command_name)
-                command_function = self.get_command_function(command_name)
+                command_function = command_object.function
 
                 try:
                     loop = asyncio.get_running_loop()
-                    loop.create_task(command_function(bot, msg))
+                    loop.create_task(command_object.function(bot, msg))
                 except RuntimeError:
-                    asyncio.run(command_function(bot, msg))
+                    asyncio.run(command_object.function(bot, msg))
 
-        except Exception:
-            logging.warning(f"Error running command {command_name}. Traceback:", exc_info = True)
+        except Exception as e:
+            logging.warning(f"Error running command {command_name}: \n{e}")
 
 
-global command_manager
 command_manager = CommandManager()
 
 
 class Command():
-
     command_manager = command_manager
 
     def __init__(self, command_name: str, aliases: list[str] = None, command_group = "default",
-                 help_short = "") -> None:
+                 help = "", short_help = "") -> None:
         self.name = command_name
         self.aliases = aliases
         self.command_group = command_group
-        self.help = help_short
+        self.short_help = short_help
+        self.help = help
+        self.function = None
 
         self.decorated = False
 
-
     def __call__(self, command_function):
-        def wrapper(*args, **kwargs):
-            return command_function(*args, **kwargs)
-
         if not self.decorated:
-            Command.command_manager.register_command(self, wrapper)
-            wrapper.__doc__ = command_function.__doc__
+            Command.command_manager.register_command(self)
+            if self.help == "":
+                self.help = command_function.__doc__
             self.decorated = True
+            self.function = command_function
         else:
-            raise Exception("Attempt to re-decorate a used command object found!")
+            pass
+            # maybe just do nothing is fine here?
+            # raise Exception("Attempt to re-decorate a used command object found!")
+
+
+class ContextActions:
+
+    def __init__(self):
+        self.actions: dict[str, callable] = {}
+
+    def add_action(self, action_name: str = "", action_callback: callable = None):
+        pass
+
+    def run_action(self, action_name: str = "", action_callback: callable = None):
+        pass
+
+    def onInterrupt(self):
+        pass

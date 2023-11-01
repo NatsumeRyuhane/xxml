@@ -15,7 +15,7 @@ class Bot(ABC):
 
     def __init__(self):
         self.instance = None
-        self.event_loop = None
+        self.event_loop: asyncio.AbstractEventLoop | None = None
 
     def get_event_loop(self) -> asyncio.AbstractEventLoop:
         return self.event_loop
@@ -31,7 +31,11 @@ class Bot(ABC):
             asyncio.set_event_loop(self.event_loop)
 
     def shutdown(self):
-        raise Exception
+        try:
+            self.event_loop.stop()
+            self.event_loop.close()
+        except Exception as e:
+            pass
 
     @abstractmethod
     def receive_message(self, msg):

@@ -13,7 +13,7 @@ import shlex
 from commands.coc.character import character_manager as cm
 
 
-@Command(command_name = "r", aliases = ["rd"], command_group = "coc", help_short = "掷骰")
+@Command(command_name = "r", aliases = ["rd"], command_group = "coc", short_help = "掷骰")
 async def r(bot: Bot, msg: Message):
     parser = CommandParser(add_help = False)
     parser.add_argument("dice_expr", nargs = '*', default = ["1d100"])

@@ -181,7 +181,6 @@ class MiraiBot(Bot, ABC):
         await self.send_message(msg_out, use_quote)
 
     def shutdown(self):
-        pass
         super().shutdown()
 
 class SyncMiraiBot(MiraiBot):

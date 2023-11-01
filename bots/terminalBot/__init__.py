@@ -49,7 +49,6 @@ class TerminalBot(Bot, ABC):
         await self.send_message(msg_out, use_quote)
 
     def shutdown(self):
-        pass
         super().shutdown()
 
 TermBot = TerminalBot()

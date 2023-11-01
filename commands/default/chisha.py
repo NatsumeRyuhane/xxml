@@ -6,7 +6,7 @@ import random
 import os
 
 
-@Command(command_name = "吃啥", help_short = "")
+@Command(command_name = "吃啥", short_help = "")
 async def func(bot: Bot, msg: Message):
     images_path = "./resources/images/food"
     image_selected = random.choice(os.listdir(images_path))

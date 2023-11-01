@@ -16,7 +16,7 @@ from commands.coc.check_response import construct_check_response
 import commands.coc.check as check
 
 
-@Command(command_name = "rc", aliases = ["ra"], command_group = "coc", help_short = "检定")
+@Command(command_name = "rc", aliases = ["ra"], command_group = "coc", short_help = "检定")
 async def rc(bot: Bot, msg: Message):
     parser = CommandParser(add_help = False)
     parser.add_argument("prop_name", nargs = "?", default = None)

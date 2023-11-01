@@ -13,7 +13,7 @@ import commands.coc.character as character
 from commands.coc.character import character_manager as cm
 
 
-@Command(command_name = "set", aliases = ["st"], command_group = "coc", help_short = "设置角色卡属性")
+@Command(command_name = "set", aliases = ["st"], command_group = "coc", short_help = "设置角色卡属性")
 async def st(bot: Bot, msg: Message):
     try:
         args = shlex.split(msg.get_texts())

@@ -3,7 +3,7 @@ from libs.message import *
 from libs.bot import Bot
 
 
-@Command(command_name = "help", help_short = "显示指令列表")
+@Command(command_name = "help", short_help = "显示指令列表")
 async def help(bot: Bot, msg: Message):
     parser = CommandParser(add_help = False)
     parser.add_argument("targetCommand", nargs = "?", default = "help")
@@ -17,9 +17,9 @@ async def help(bot: Bot, msg: Message):
 
     async def get_help():
         help_string = "可用指令："
-        for c in command_manager.command_dict.keys():
+        for c in command_manager.commands.keys():
             help_string += f"\n\n[ {command_manager.command_prefix}{c} ]"
-            command_help_short = command_manager.command_dict[c][1].help
+            command_help_short = command_manager.commands[c].short_help
             if command_help_short:
                 help_string += f"\n{command_help_short}"
 
@@ -30,7 +30,7 @@ async def help(bot: Bot, msg: Message):
             await get_help()
 
         elif command_manager.is_registered_command(args.targetCommand):
-            help_string = command_manager.get_command_complex(args.targetCommand)[0].__doc__
+            help_string = command_manager.get_command_object(args.targetCommand).help
             command = str(args.targetCommand).replace(command_manager.command_prefix, '')
 
             if help_string is None:
@@ -38,17 +38,17 @@ async def help(bot: Bot, msg: Message):
                     f"{command_manager.command_prefix}{command}\n\n 该指令还没有详细文档。因为小毛龙是懒狗。"))
             else:
                 await bot.reply_message(msg, Text(f"{command_manager.command_prefix}{command}\n\n {help_string}"))
-            return 0
+
         elif command_manager.is_command_alias(args.targetCommand):
-            help_string = command_manager.get_command_complex(args.targetCommand)[0].__doc__
-            command = str(args.targetCommand).replace(command_manager.command_prefix, '')
+            help_string = command_manager.get_command_object(args.targetCommand).help
+            alias = str(args.targetCommand).replace(command_manager.command_prefix, '')
 
             if help_string is None:
                 await bot.reply_message(msg, Text(
-                    f"[{command_manager.command_prefix}{command}]是[{command_manager.command_prefix}{command_manager.command_alias_dict[args.targetCommand]}]的别称。\n\n 该指令还没有详细文档。因为小毛龙是懒狗。"))
+                    f"[{command_manager.command_prefix}{alias}]是[{command_manager.command_prefix}{command_manager.command_aliases[alias]}]的别称。\n\n 该指令还没有详细文档。因为小毛龙是懒狗。"))
             else:
                 await bot.reply_message(msg, Text(
-                    f"[{command_manager.command_prefix}{command}]是[{command_manager.command_prefix}{command_manager.command_alias_dict[args.targetCommand]}]的别称。\n\n {command_manager.get_command_complex(args.targetCommand)[0].__doc__}"))
-            return 0
+                    f"[{command_manager.command_prefix}{alias}]是[{command_manager.command_prefix}{command_manager.command_aliases[alias]}]的别称。\n\n {command_manager.get_command_object(args.targetCommand).help}"))
+
     else:
         await get_help()
