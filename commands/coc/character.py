@@ -8,15 +8,15 @@ from libs.singleton import Singleton
 
 class CharacterManager(metaclass = Singleton):
 
-    def __init__(self, save_file: str = None):
+    def __init__(self, save_dir: str = None):
 
         self.next_id = 0
         self.characters = {}
         self.user_mapping = {}
-        self.save_file = save_file
+        self.save_file = save_dir
 
         try:
-            with open(save_file, "r") as f:
+            with open(save_dir, "r") as f:
                 pass
             self.load()
         except (FileNotFoundError, TypeError) as e:

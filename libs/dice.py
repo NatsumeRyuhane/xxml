@@ -19,7 +19,7 @@ def restricted_eval(expr: str):
 
 class Dice:
 
-    def __init__(self, count: int, face: int, bonus=None, penalty=None, name="", expr=""):
+    def __init__(self, count: int, face: int, bonus = None, penalty = None, name = "", expr = ""):
         self.name = name
         self.expr = expr
         self.count = count
@@ -117,6 +117,21 @@ class DiceExpression:
             else:
                 break
 
+    def __str__(self):
+        if len(self.dice_list) == 0:
+            return str(self.raw_expr)
+        elif len(self.dice_list) == 1 and re.fullmatch("([1-9]\d*)?[dD]([1-9]\d*)+((([bB]([1-9]\d*)?))|(([pP]([1-9]\d*)?)))?", self.raw_expr):
+            return self.dice_list[0].get_roll_detail()
+        else:
+            eval_expr = self.parsed_expr
+
+            for d in self.dice_list:
+                eval_expr = eval_expr.replace(d.name, f"[{d.get_value()}]")
+
+            string = f"{eval_expr} = {self.get_value()}".replace("  ", " ")
+
+            return string
+
     def parse_dice(self, dice_expr: str):
 
         # parsing dice count
@@ -187,18 +202,3 @@ class DiceExpression:
             return result
         except Exception as e:
             raise ValueError(f"Unable to parse the dice expr: {self.raw_expr}")
-
-    def __str__(self):
-        if len(self.dice_list) == 0:
-            return str(self.raw_expr)
-        elif len(self.dice_list) == 1 and re.fullmatch("([1-9]\d*)?[dD]([1-9]\d*)+((([bB]([1-9]\d*)?))|(([pP]([1-9]\d*)?)))?", self.raw_expr):
-            return self.dice_list[0].get_roll_detail()
-        else:
-            eval_expr = self.parsed_expr
-
-            for d in self.dice_list:
-                eval_expr = eval_expr.replace(d.name, f"[{d.get_value()}]")
-
-            string = f"{eval_expr} = {self.get_value()}".replace("  ", " ")
-
-            return string

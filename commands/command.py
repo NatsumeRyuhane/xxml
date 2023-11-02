@@ -2,6 +2,7 @@ import logging
 import argparse
 import shlex
 import asyncio
+import typing
 
 from libs.message import Message
 from libs.bot import Bot
@@ -11,7 +12,7 @@ from libs.singleton import Singleton
 class CommandParser(argparse.ArgumentParser):
     """Custom ArgumentParser that overrides _print_message()"""
 
-    def _print_message(self, message, file = None):
+    def _print_message(self, message, file = None) -> typing.Any:
         if message:
             return message
 
@@ -26,7 +27,7 @@ class CommandManager(metaclass = Singleton):
 
         self.context_actions: dict[str, ContextActions] = {}
 
-    def register_command(self, command_object):
+    def register_command(self, command_object) -> None:
         if command_object.name in self.commands.keys():
             raise KeyError(f"Command name [{command_object.name}] inflicts with previously registered command")
 
@@ -91,10 +92,25 @@ class CommandManager(metaclass = Singleton):
         else:
             return None
 
+    def set_context_actions(self, msg: Message):
+        new_context_actions = ContextActions(self.command_prefix)
+        self.context_actions[msg.context.sender_id] = new_context_actions
+
+        return new_context_actions
+
+    def clear_context_action(self, msg: Message):
+        self.context_actions[msg.context.sender_id] = ContextActions()
+
     def run_command(self, bot: Bot, msg: Message):
-        """
-        parse and run the command in a message as an asyncio task
-        """
+        # prioritize the check of context actions
+        if msg.context.sender_id in self.context_actions.keys():
+            context_action = self.context_actions[msg.context.sender_id]
+            action_name = context_action.parse_action_from_msg(msg)
+
+            if action_name:
+                context_action.run_action(action_name, bot, msg)
+                return
+
         command_name = "[UNRESOLVED COMMAND]"
         try:
             command_name = self.parse_command_from_msg(msg)
@@ -105,8 +121,9 @@ class CommandManager(metaclass = Singleton):
                 else:
                     logging.info(f"Running command [{command_name}]")
 
+                # the prev context actions will be cleared on successfully resolving a command
+                self.clear_context_action(msg)
                 command_object = self.get_command_object(command_name)
-                command_function = command_object.function
 
                 try:
                     loop = asyncio.get_running_loop()
@@ -121,19 +138,19 @@ class CommandManager(metaclass = Singleton):
 command_manager = CommandManager()
 
 
-class Command():
+class Command:
     command_manager = command_manager
 
     def __init__(self, command_name: str, aliases: list[str] = None, command_group = "default",
                  help = "", short_help = "") -> None:
-        self.name = command_name
-        self.aliases = aliases
-        self.command_group = command_group
-        self.short_help = short_help
-        self.help = help
-        self.function = None
+        self.name: str = command_name
+        self.aliases: list[str] = aliases
+        self.command_group: str = command_group
+        self.short_help: str = short_help
+        self.help: str = help
+        self.function: typing.Union[typing.Coroutine, None] = None
 
-        self.decorated = False
+        self.decorated: bool = False
 
     def __call__(self, command_function):
         if not self.decorated:
@@ -150,14 +167,38 @@ class Command():
 
 class ContextActions:
 
-    def __init__(self):
-        self.actions: dict[str, callable] = {}
+    def __init__(self, command_prefix: str = ""):
+        self.command_prefix = command_prefix
+        self.actions: dict[str, typing.Coroutine] = {}
 
-    def add_action(self, action_name: str = "", action_callback: callable = None):
-        pass
+    def add_action(self, action_name: str = ""):
+        def decorator(function: typing.Coroutine):
+            self.actions[action_name] = function
 
-    def run_action(self, action_name: str = "", action_callback: callable = None):
-        pass
+        return decorator
 
-    def onInterrupt(self):
+    def parse_action_from_msg(self, msg: Message) -> str | None:
+        try:
+            args = shlex.split(msg.get_texts())
+            if args and args[0][0] == self.command_prefix:
+                if args[0][1:] in self.actions.keys():
+                    return args[0][1:]
+
+            return None
+        except Exception as e:
+            logging.error(e)
+            return None
+
+    def run_action(self, action_name: str, bot: Bot, msg: Message):
+        action = self.actions[action_name]
+
+        logging.info(f"Running context action [{action_name}]")
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(action(bot, msg))
+        except RuntimeError:
+            asyncio.run(action(bot, msg))
+
+    def on_interrupt(self):
         pass
