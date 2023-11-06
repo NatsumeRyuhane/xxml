@@ -22,6 +22,7 @@ class TerminalBot(Bot, ABC):
 
         logging.received_message(f"[Terminal] {msg}")
 
+        command_manager.run_context_action(self, rcvd_msg)
         command_manager.run_command(self, rcvd_msg)
 
     def parse_message(self, msg: str) -> Message:

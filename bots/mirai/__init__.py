@@ -23,6 +23,7 @@ class MiraiBot(Bot, ABC):
         if rcvd_msg.context.context_type == Context.MessageContextType.PRIVATE:
             logging.received_message(f"[Mirai] [PRIVATE] \"{rcvd_msg.context.sender_name}\"({rcvd_msg.context.sender_id}): {rcvd_msg}")
 
+        command_manager.run_context_action(self, rcvd_msg)
         command_manager.run_command(self, rcvd_msg)
 
     def parse_message(self, msg: miraicle.Message) -> Message:

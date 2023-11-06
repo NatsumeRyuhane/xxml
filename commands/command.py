@@ -3,10 +3,62 @@ import argparse
 import shlex
 import asyncio
 import typing
+from enum import Enum
 
 from libs.message import Message
 from libs.bot import Bot
 from libs.singleton import Singleton
+
+
+class ContextActions:
+    class ContextActionType(Enum):
+        ON_COMMAND = 1
+        ON_NEXT_MESSAGE = 2
+        ON_NEXT_EVENT = 4
+
+    def __init__(self, action_type: ContextActionType = ContextActionType.ON_COMMAND, command_prefix: str = ""):
+        self.action_type = action_type
+        self.command_prefix = command_prefix
+        self.actions: dict[str, typing.Coroutine] = {}
+
+    def add_action(self, action_name: str = ""):
+        if self.action_type == ContextActions.ContextActionType.ON_COMMAND:
+            def decorator(function: typing.Coroutine):
+                self.actions[action_name] = function
+
+            return decorator
+        else:
+            # For event-triggered context actions, the only key in self.actions is defined as "action"
+            def decorator(function: typing.Coroutine):
+                self.actions["action"] = function
+
+            return decorator
+
+    def parse_action_from_msg(self, msg: Message) -> str | None:
+        try:
+            args = shlex.split(msg.get_texts())
+            if args and args[0][0] == self.command_prefix:
+                if args[0][1:] in self.actions.keys():
+                    return args[0][1:]
+
+            return None
+        except Exception as e:
+            logging.error(e)
+            return None
+
+    def run_action(self, action_name: str, bot: Bot, msg: Message):
+        action = self.actions[action_name]
+
+        logging.info(f"Running context action [{action_name}]")
+
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(action(bot, msg))
+        except RuntimeError:
+            asyncio.run(action(bot, msg))
+
+    def on_interrupt(self):
+        pass
 
 
 class CommandParser(argparse.ArgumentParser):
@@ -30,15 +82,15 @@ class CommandManager(metaclass = Singleton):
     def register_command(self, command_object) -> None:
         if command_object.name in self.commands.keys():
             raise KeyError(f"Command name [{command_object.name}] inflicts with previously registered command")
-
-        if command_object.command_group == "default":
-            logging.info(f"Registering new command [{command_object.name}]")
         else:
             if command_object.command_group not in self.command_groups.keys():
                 logging.info(f"Registering new command group [{command_object.command_group}]")
                 self.command_groups[command_object.command_group] = []
 
-            logging.info(f"Registering new command [{command_object.command_group}] > [{command_object.name}]")
+            if command_object.command_group == "default":
+                logging.info(f"Registering new command [{command_object.name}]")
+            else:
+                logging.info(f"Registering new command [{command_object.command_group}] > [{command_object.name}]")
             self.command_groups[command_object.command_group].append(command_object.name)
 
         self.commands[command_object.name] = command_object
@@ -48,7 +100,7 @@ class CommandManager(metaclass = Singleton):
                 logging.info(f"Registering command alias [{alias}] for command [{command_object.name}]")
 
                 if alias in self.command_aliases.keys():
-                    logging.error(f"Registering command alias [{alias}] inflicts with previously registered alias, skipping this alias for command [{command_object.name}]")
+                    logging.error(f"Command alias [{alias}] inflicts with previously registered alias, skipping this alias for command [{command_object.name}]")
                 else:
                     self.command_aliases[alias] = command_object.name
 
@@ -92,25 +144,32 @@ class CommandManager(metaclass = Singleton):
         else:
             return None
 
-    def set_context_actions(self, msg: Message):
-        new_context_actions = ContextActions(self.command_prefix)
+    def set_context_actions(self, msg: Message, action_type = ContextActions.ContextActionType.ON_COMMAND):
+        new_context_actions = ContextActions(action_type, self.command_prefix)
         self.context_actions[msg.context.sender_id] = new_context_actions
 
         return new_context_actions
 
     def clear_context_action(self, msg: Message):
-        self.context_actions[msg.context.sender_id] = ContextActions()
+        if msg.context.sender_id in self.context_actions.keys():
+            del self.context_actions[msg.context.sender_id]
 
-    def run_command(self, bot: Bot, msg: Message):
-        # prioritize the check of context actions
+    def run_context_action(self, bot: Bot, msg: Message) -> bool:
         if msg.context.sender_id in self.context_actions.keys():
             context_action = self.context_actions[msg.context.sender_id]
-            action_name = context_action.parse_action_from_msg(msg)
 
-            if action_name:
-                context_action.run_action(action_name, bot, msg)
-                return
+            if context_action:
+                if context_action.action_type == ContextActions.ContextActionType.ON_COMMAND:
+                    action_name = context_action.parse_action_from_msg(msg)
+                    context_action.run_action(action_name, bot, msg)
+                    return True
+                else:
+                    context_action.run_action("action", bot, msg)
+                    return True
 
+        return False
+
+    def run_command(self, bot: Bot, msg: Message):
         command_name = "[UNRESOLVED COMMAND]"
         try:
             command_name = self.parse_command_from_msg(msg)
@@ -163,42 +222,3 @@ class Command:
             pass
             # maybe just do nothing is fine here?
             # raise Exception("Attempt to re-decorate a used command object found!")
-
-
-class ContextActions:
-
-    def __init__(self, command_prefix: str = ""):
-        self.command_prefix = command_prefix
-        self.actions: dict[str, typing.Coroutine] = {}
-
-    def add_action(self, action_name: str = ""):
-        def decorator(function: typing.Coroutine):
-            self.actions[action_name] = function
-
-        return decorator
-
-    def parse_action_from_msg(self, msg: Message) -> str | None:
-        try:
-            args = shlex.split(msg.get_texts())
-            if args and args[0][0] == self.command_prefix:
-                if args[0][1:] in self.actions.keys():
-                    return args[0][1:]
-
-            return None
-        except Exception as e:
-            logging.error(e)
-            return None
-
-    def run_action(self, action_name: str, bot: Bot, msg: Message):
-        action = self.actions[action_name]
-
-        logging.info(f"Running context action [{action_name}]")
-
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(action(bot, msg))
-        except RuntimeError:
-            asyncio.run(action(bot, msg))
-
-    def on_interrupt(self):
-        pass
